@@ -72,6 +72,7 @@ function solveEquation(equationString) {
         }
     }
     if (depth != 0) return NaN;
+    allert("unclosed parentheses");
 
 
     for (let i = parentheseList.length - 1; i >= 0; i--) {
