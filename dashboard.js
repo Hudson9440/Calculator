@@ -80,7 +80,6 @@ function solveEquation(equationString) {
     }
 
 
-
     for (let i = parentheseList.length - 1; i >= 0; i--) {
         let [open, close] = parentheseList[i];
         let inner = solveEquation(equation.slice(open + 1, close));
