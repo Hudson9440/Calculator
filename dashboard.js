@@ -31,7 +31,7 @@ function findNumbers(equation) {
         } else if (equation[i] == "-" && startingindex == null) {
             startingindex = i;
             isNegative = -1;
-            
+
         } else {
             if (currentVal != null) {
                 endingindex = i;
@@ -67,12 +67,18 @@ function solveEquation(equationString) {
             depth++;
         } else if (equation[i] == ")") {
             depth--;
-            if (depth < 0) return NaN;
+            if (depth < 0) {
+                alert("unclosed parentheses");
+                return NaN;
+            }
             if (depth == 0) parentheseList.push([start, i]);
         }
     }
-    if (depth != 0) return NaN;
-    allert("unclosed parentheses");
+    if (depth != 0) {
+        alert("unclosed parentheses");
+        return NaN;
+    }
+
 
 
     for (let i = parentheseList.length - 1; i >= 0; i--) {
@@ -132,7 +138,7 @@ function solveEquation(equationString) {
             let number1 = numbers.find(n => n[2] == i);
             let number2 = numbers.find(n => n[1] == i + 1);
             console.log("nums: " + numbers);
-            console.log("num1 :" + number1 +"\nnum2 :" + number2);
+            console.log("num1 :" + number1 + "\nnum2 :" + number2);
             if (!number1 || !number2) return NaN;
             console.log("here2");
             equation.splice(number1[1], number2[2] - number1[1], ...String(number1[0] - number2[0]));
