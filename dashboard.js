@@ -1,5 +1,5 @@
 document.getElementById('Calculate').addEventListener('click', () => {
-    document.getElementById('output').textContent = solveEquation(document.getElementById('input').value);
+    document.getElementById('output').textContent = solveEquation(document.getElementById('input').value).toFixed(4);
 })
 
 function isDigit(c) {
@@ -27,6 +27,9 @@ function findNumbers(equation) {
                 currentVal += +equation[i];
             }
         } else if (equation[i] == ".") {
+            if (startingindex == null) {
+                startingindex = i;
+            }
             isDecimal = true;
         } else if (equation[i] == "-" && startingindex == null) {
             startingindex = i;
@@ -45,7 +48,6 @@ function findNumbers(equation) {
             currentVal = null;
         }
     }
-    // FIX: only add a final number if one was actually being read
     if (currentVal != null) {
         numbers.push([currentVal * isNegative, startingindex, equation.length]);
     }
@@ -84,7 +86,6 @@ function solveEquation(equationString) {
         let [open, close] = parentheseList[i];
         let inner = solveEquation(equation.slice(open + 1, close));
         if (isNaN(inner)) return NaN;
-
         let result = [...String(inner)];
         let prev = equation[open - 1];
         let next = equation[close + 1];
