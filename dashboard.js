@@ -145,6 +145,7 @@ function solveEquation(equationString) {
             i = -1;
         }
     }
+    
 
     console.log("end equation:" + equation);
     if (equation.length == 0) return NaN;
