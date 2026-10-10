@@ -2,6 +2,10 @@ document.getElementById('Calculate').addEventListener('click', () => {
     document.getElementById('output').textContent = solveEquation(document.getElementById('input').value);
 })
 
+function isDigit(c) {
+    return c !== undefined && /\d/.test(c);
+}
+
 function findNumbers(equation) {
     let currentVal = null;
     let power = -1
@@ -24,11 +28,10 @@ function findNumbers(equation) {
             }
         } else if (equation[i] == ".") {
             isDecimal = true;
-        } else if (equation[i] == "-") {
-            if (startingindex == null) {
-                startingindex = i;
-            }
+        } else if (equation[i] == "-" && startingindex == null) {
+            startingindex = i;
             isNegative = -1;
+            
         } else {
             if (currentVal != null) {
                 endingindex = i;
@@ -42,86 +45,102 @@ function findNumbers(equation) {
             currentVal = null;
         }
     }
-    numbers.push([currentVal * isNegative, startingindex, equation.length]);
+    // FIX: only add a final number if one was actually being read
+    if (currentVal != null) {
+        numbers.push([currentVal * isNegative, startingindex, equation.length]);
+    }
+    console.log(numbers);
     return numbers;
 }
 
 
 function solveEquation(equationString) {
-    let equation = [...equationString];
-    let answer = null;
-    let parentheseIndexBackup = []
-    let parentheseBackLog = 0
-    let parentheseList = [];
 
+    let equation = [...equationString].filter(c => c != " ");
+
+    let parentheseList = [];
+    let depth = 0;
+    let start = null;
     for (let i = 0; i < equation.length; i++) {
         if (equation[i] == "(") {
-            parentheseIndexBackup.push(i);
-            parentheseBackLog++;
+            if (depth == 0) start = i;
+            depth++;
         } else if (equation[i] == ")") {
-            parentheseIndexBackup.push(i);
-            parentheseBackLog--;
-        }
-        while (parentheseBackLog == 0 && parentheseIndexBackup.length != 0) {
-            parentheseList[parentheseList.length] = [parentheseIndexBackup[0], parentheseIndexBackup[parentheseIndexBackup.length - 1]]
-            parentheseIndexBackup.pop()
-            parentheseIndexBackup.shift()
+            depth--;
+            if (depth < 0) return NaN;
+            if (depth == 0) parentheseList.push([start, i]);
         }
     }
-    for (let i = 0; i < parentheseList.length; i++) {
-        if (parentheseList[i][0] - 1 == "/") {
-            equation.splice(parentheseList[i][0], parentheseList[i][1] - parentheseList[i][0], solveEquation(equation.slice(parentheseList[i][0] + 1, parentheseList[i][1])));
+    if (depth != 0) return NaN;
 
-        } else {
-            equation.splice(parentheseList[i][0], parentheseList[i][1] - parentheseList[i][0], "x", solveEquation(equation.slice(parentheseList[i][0] + 1, parentheseList[i][1])));
-        }
+
+    for (let i = parentheseList.length - 1; i >= 0; i--) {
+        let [open, close] = parentheseList[i];
+        let inner = solveEquation(equation.slice(open + 1, close));
+        if (isNaN(inner)) return NaN;
+
+        let result = [...String(inner)];
+        let prev = equation[open - 1];
+        let next = equation[close + 1];
+        if (isDigit(prev) || prev == ")") result.unshift("x");
+        if (isDigit(next)) result.push("x");
+        equation.splice(open, close - open + 1, ...result);
     }
+
+
     let numbers = findNumbers(equation);
-    let number1 = null
-    let number2 = null
-    for (let i = 0; i < equation.length; i++) {
+
+    for (let i = equation.length - 1; i >= 0; i--) {
         if (equation[i] == "^") {
-            for (let j = 0; j < numbers.length; j++) {
-                if (numbers[j][2] == i) {
-                    number1 = numbers[j]
-                }
-            }
-            for (let j = 0; j < numbers.length; j++) {
-                if (numbers[j][1] == i + 1) {
-                    number2 = numbers[j]
-                }
-            }
-            equation.splice(number1[1], number2[2] - number1[1], Math.pow(number1[0], number2[0]));
-            answer = Math.pow(number1[0], number2[0]);
-        }
-    }
-    for (let i = 0; i < equation.length; i++) {
-        let num1index = null
-        let num2index = null
-        if (equation[i] == "x") {
-            for (let j = 0; j < numbers.length; j++) {
-                if (numbers[j][2] == i) {
-                    number1 = numbers[j]
-                    num1index = j
-                    console.log("found Number1 " + number1);
-                }
-            }
-            for (let j = 0; j < numbers.length; j++) {
-                if (numbers[j][1] == i + 1) {
-                    number2 = numbers[j]
-                    num2index = j
-                    console.log("found Number2 " + number2);
-                }
-            }
-            equation.splice(number1[1], number2[2] - number1[1], String(number1[0] * number2[0]));
-            i--
-            answer = number1[0] * number2[0]
-            numbers.splice(num1index, 2, [String(number1[0] * number2[0]), number1[1], number1[2]])
-            console.log(numbers)
-            console.log(equation)
+            let number1 = numbers.find(n => n[2] == i);
+            let number2 = numbers.find(n => n[1] == i + 1);
+            if (!number1 || !number2) return NaN;
+            equation.splice(number1[1], number2[2] - number1[1], ...String(Math.pow(number1[0], number2[0])));
             numbers = findNumbers(equation);
         }
     }
 
-    return answer;
+    for (let i = 0; i < equation.length; i++) {
+        if (equation[i] == "x" || equation[i] == "*") {
+            let number1 = numbers.find(n => n[2] == i);
+            let number2 = numbers.find(n => n[1] == i + 1);
+            if (!number1 || !number2) return NaN;
+            equation.splice(number1[1], number2[2] - number1[1], ...String(number1[0] * number2[0]));
+            numbers = findNumbers(equation);
+            i = -1;
+        }
+        if (equation[i] == "/") {
+            let number1 = numbers.find(n => n[2] == i);
+            let number2 = numbers.find(n => n[1] == i + 1);
+            if (!number1 || !number2) return NaN;
+            equation.splice(number1[1], number2[2] - number1[1], ...String(number1[0] / number2[0]));
+            numbers = findNumbers(equation);
+            i = -1;
+        }
+    }
+    for (let i = 0; i < equation.length; i++) {
+        if (equation[i] == "+") {
+            let number1 = numbers.find(n => n[2] == i);
+            let number2 = numbers.find(n => n[1] == i + 1);
+            if (!number1 || !number2) return NaN;
+            equation.splice(number1[1], number2[2] - number1[1], ...String(number1[0] + number2[0]));
+            numbers = findNumbers(equation);
+            i = -1;
+        }
+        if (equation[i] == "-") {
+            let number1 = numbers.find(n => n[2] == i);
+            let number2 = numbers.find(n => n[1] == i + 1);
+            console.log("nums: " + numbers);
+            console.log("num1 :" + number1 +"\nnum2 :" + number2);
+            if (!number1 || !number2) return NaN;
+            console.log("here2");
+            equation.splice(number1[1], number2[2] - number1[1], ...String(number1[0] - number2[0]));
+            numbers = findNumbers(equation);
+            i = -1;
+        }
+    }
+
+    console.log("end equation:" + equation);
+    if (equation.length == 0) return NaN;
+    return Number(equation.join(""));
 }
