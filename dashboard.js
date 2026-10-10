@@ -136,10 +136,10 @@ function solveEquation(equationString) {
         if (equation[i] == "-") {
             let number1 = numbers.find(n => n[2] == i);
             let number2 = numbers.find(n => n[1] == i + 1);
-            console.log("nums: " + numbers);
-            console.log("num1 :" + number1 + "\nnum2 :" + number2);
-            if (!number1 || !number2) return NaN;
-            console.log("here2");
+            console.log(numbers);
+            if ((!number1 || !number2) && number1 == number2) {
+                return numbers[0][0];
+            }
             equation.splice(number1[1], number2[2] - number1[1], ...String(number1[0] - number2[0]));
             numbers = findNumbers(equation);
             i = -1;
